@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.tensor as tensor
+from torch import tensor
 from torch.nn import functional as F
 
 __all__ = ['inception_iccv']
@@ -30,10 +30,16 @@ class ChannelAttn(nn.Module):
         assert in_channels%reduction_rate == 0
         self.conv1 = nn.Conv2d(in_channels, in_channels // reduction_rate, kernel_size=1, stride=1, padding=0)
         self.conv2 = nn.Conv2d(in_channels // reduction_rate, in_channels, kernel_size=1, stride=1, padding=0)
+        if in_channels==768:
+            self.pool_size = torch.Size([32,16])
+        else:
+            self.pool_size = torch.Size([int(in_channels/32),int(in_channels/64)])
+
 
     def forward(self, x):
         # squeeze operation (global average pooling)
-        x = F.avg_pool2d(x, x.size()[2:])
+        # x = F.avg_pool2d(x, x.size()[2:])
+        x = F.avg_pool2d(x, self.pool_size)
         # excitation operation (2 conv layers)
         x = F.relu(self.conv1(x))
         x = self.conv2(x)
